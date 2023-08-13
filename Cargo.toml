@@ -26,4 +26,5 @@ features = [
   'Element',
   'HtmlCanvasElement',
   'HtmlInputElement',
+  'CssStyleDeclaration',
 ]

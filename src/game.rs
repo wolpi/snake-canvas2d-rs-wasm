@@ -1,6 +1,7 @@
 use crate::utils::log;
 use crate::utils::random;
 use crate::textdisplay::update_text_display;
+use crate::textdisplay::set_background_colour;
 
 use wasm_bindgen::prelude::*;
 
@@ -10,6 +11,7 @@ const INITIAL_SNAKE_LEN: usize = 3;
 const FRAME_RATE_SPEED_1: u32 = 1000 / 10;
 const SPEED_INCREASE_MS: u32 = 10;
 const SPEED_INCREASE_AT_SCORE: u32 = 3;
+const SPEED_TO_SET_BG_COL: u32 = 2;
 
 const COLOURS: [&str; 21] = [
     "#050",
@@ -33,6 +35,16 @@ const COLOURS: [&str; 21] = [
     "#550",
     "#AA0",
     "#FF0",
+];
+
+const BACKGROUND_COLOURS: [&str; 7] = [
+    "#00F",
+    "#0FF",
+    "#F0F",
+    "#F00",
+    "#FA0",
+    "#FF0",
+    "#0F0",
 ];
 
 #[derive(Copy, Clone, PartialEq)]
@@ -112,6 +124,7 @@ impl Game {
         self.pause = false;
         self.timestamp_last_frame = 0;
         self.colour_index = 0;
+        set_background_colour("#FFF");
         update_text_display(self.score, self.speed);
         self.place_food();
     }
@@ -246,6 +259,10 @@ impl Game {
             if self.score % SPEED_INCREASE_AT_SCORE == 0 {
                 self.speed = self.speed + 1;
                 log!("frame_time_threshold: {}", self.frame_time_threshold());
+                if self.speed >= SPEED_TO_SET_BG_COL {
+                    let bg_col_idx = (self.speed - SPEED_TO_SET_BG_COL) as usize % BACKGROUND_COLOURS.len();
+                    set_background_colour(BACKGROUND_COLOURS[bg_col_idx]);
+                }
             }
             update_text_display(self.score, self.speed);
             self.place_food();
