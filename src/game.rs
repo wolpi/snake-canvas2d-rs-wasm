@@ -6,11 +6,34 @@ use wasm_bindgen::prelude::*;
 
 
 pub const DEFAULT_INPUT: char = '1';
-
+const INITIAL_SNAKE_LEN: usize = 3;
 const FRAME_RATE_SPEED_1: u32 = 1000 / 10;
 const SPEED_INCREASE_MS: u32 = 10;
 const SPEED_INCREASE_AT_SCORE: u32 = 3;
 
+const COLOURS: [&str; 21] = [
+    "#050",
+    "#0A0",
+    "#0F0",
+    "#00F",
+    "#00A",
+    "#005",
+    "#055",
+    "#0AA",
+    "#0FF",
+    "#F0F",
+    "#A0A",
+    "#505",
+    "#500",
+    "#A00",
+    "#F00",
+    "#FA0",
+    "#A50",
+    "#A30",
+    "#550",
+    "#AA0",
+    "#FF0",
+];
 
 #[derive(Copy, Clone, PartialEq)]
 struct Point {
@@ -42,6 +65,7 @@ pub struct Game {
     pause: bool,
     input: char,
     timestamp_last_frame: u32,
+    colour_index: usize,
 }
 
 
@@ -62,6 +86,7 @@ impl Game {
             pause: false,
             input: DEFAULT_INPUT,
             timestamp_last_frame: 0,
+            colour_index: 0,
        }
     }
     pub fn set_state(
@@ -86,14 +111,21 @@ impl Game {
         self.over = false;
         self.pause = false;
         self.timestamp_last_frame = 0;
+        self.colour_index = 0;
+        update_text_display(self.score, self.speed);
         self.place_food();
     }
 
     fn init_snake(&self) -> Vec<Point> {
         let first_point = self.calc_center();
-        let second_point = Point{x: first_point.x, y: first_point.y - 1};
-        let third_point = Point{x: second_point.x, y: second_point.y - 1};
-        vec![first_point, second_point, third_point]
+        let mut snake = vec![first_point];
+        let mut i :i32 = 1;
+        while i < INITIAL_SNAKE_LEN.try_into().unwrap() {
+            let point = Point{x: first_point.x, y: first_point.y - i};
+            snake.push(point);
+            i = i + 1;
+        }
+        snake
     }
 
     pub fn set_input(&mut self, input: char) {
@@ -210,6 +242,7 @@ impl Game {
             let last_point = self.snake[self.snake.len() - 1];
             self.snake.push(last_point);
             self.score = self.score + 1;
+            self.inc_colour_index();
             if self.score % SPEED_INCREASE_AT_SCORE == 0 {
                 self.speed = self.speed + 1;
                 log!("frame_time_threshold: {}", self.frame_time_threshold());
@@ -231,6 +264,14 @@ impl Game {
         }
         log!("placing food at: {},{}", point.x, point.y);
         self.food = point;
+    }
+
+    fn inc_colour_index(&mut self) {
+        if self.colour_index == COLOURS.len() -1 {
+            self.colour_index = 0;
+        } else {
+            self.colour_index = self.colour_index + 1;
+        }
     }
 
     fn check_border_collision(&self) -> bool {
@@ -326,17 +367,24 @@ impl Game {
         }
     }
     fn draw_snake(&self, context: &web_sys::CanvasRenderingContext2d) {
+        let mut i :usize = 0;
         for point in &self.snake {
-            self.draw_point(point, context);
+            let colour = if i < INITIAL_SNAKE_LEN {
+                "#000"
+            } else {
+                COLOURS[(i - INITIAL_SNAKE_LEN) % COLOURS.len()]
+            };
+            self.draw_point(point, colour, context);
+            i = i + 1;
         }
     }
-    fn draw_point(&self, point: &Point, context: &web_sys::CanvasRenderingContext2d) {
+    fn draw_point(&self, point: &Point, colour: &str, context: &web_sys::CanvasRenderingContext2d) {
         let coord = self.calc_coord(&point);
-        context.set_fill_style(&JsValue::from_str("#000"));
+        context.set_fill_style(&JsValue::from_str(colour));
         context.fill_rect(coord.x.into(), coord.y.into(), self.block_size.into(), self.block_size.into());
     }
     fn draw_food(&self, context: &web_sys::CanvasRenderingContext2d) {
-        context.set_stroke_style(&JsValue::from_str("#000"));
+        context.set_stroke_style(&JsValue::from_str(COLOURS[self.colour_index]));
         context.set_line_width(3.0);
         let block_size_half:i32 = (self.block_size / 2) as i32;
         let mut coord = self.calc_coord(&self.food);
