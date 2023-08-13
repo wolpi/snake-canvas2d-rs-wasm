@@ -30,7 +30,8 @@ fn register_event_listeners(document: &web_sys::Document) -> Result<(), JsValue>
     log!("register_event_listeners()");
 
     register_event_listener_create(document)?;
-    register_event_listener_input(document)?;
+    register_event_listener_input_keyboard(document)?;
+    register_event_listeners_input_touch(document)?;
     
     Ok(())
 }
@@ -50,7 +51,7 @@ fn register_event_listener_create(document: &web_sys::Document) -> Result<(), Js
     Ok(())
 }
 
-fn register_event_listener_input(document: &web_sys::Document) -> Result<(), JsValue> {
+fn register_event_listener_input_keyboard(document: &web_sys::Document) -> Result<(), JsValue> {
     let callback = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
         //log!("e.key_code(): {}", e.key_code());
         unsafe {
@@ -67,6 +68,30 @@ fn register_event_listener_input(document: &web_sys::Document) -> Result<(), JsV
 
     document.get_element_by_id("body").unwrap()
         .add_event_listener_with_callback("keydown", &callback.as_ref().unchecked_ref())?;
+
+    callback.forget();
+
+    Ok(())
+}
+
+fn register_event_listeners_input_touch(document: &web_sys::Document) -> Result<(), JsValue> {
+    register_event_listener_input_touch(document, 'w', "touch-up")?;
+    register_event_listener_input_touch(document, 'a', "touch-left")?;
+    register_event_listener_input_touch(document, 's', "touch-down")?;
+    register_event_listener_input_touch(document, 'd', "touch-right")?;
+    register_event_listener_input_touch(document, ' ', "touch-pause")?;
+    Ok(())
+}
+
+fn register_event_listener_input_touch(document: &web_sys::Document, key :char, id :&str) -> Result<(), JsValue> {
+    let callback = Closure::wrap(Box::new(move || {
+        unsafe {
+            GAME.set_input(key);
+        }
+    }) as Box<dyn FnMut()>);
+
+    document.get_element_by_id(id).unwrap()
+        .add_event_listener_with_callback("click", &callback.as_ref().unchecked_ref())?;
 
     callback.forget();
 
