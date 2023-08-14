@@ -9,9 +9,11 @@ use wasm_bindgen::prelude::*;
 pub const DEFAULT_INPUT: char = '1';
 const INITIAL_SNAKE_LEN: usize = 3;
 const FRAME_RATE_SPEED_1: u32 = 1000 / 10;
-const SPEED_INCREASE_MS: u32 = 10;
+const SPEED_INCREASE_MS_MODE_KEYBOARD: u32 = 10;
+const SPEED_INCREASE_MS_MODE_TOUCH: u32 = 5;
 const SPEED_INCREASE_AT_SCORE: u32 = 3;
 const SPEED_TO_SET_BG_COL: u32 = 2;
+const TOUCH_MODE_FOOD_BORDER_OFFSET: u32 = 5;
 
 const COLOURS: [&str; 21] = [
     "#050",
@@ -78,6 +80,7 @@ pub struct Game {
     input: char,
     timestamp_last_frame: u32,
     colour_index: usize,
+    touch_mode: bool,
 }
 
 
@@ -99,6 +102,7 @@ impl Game {
             input: DEFAULT_INPUT,
             timestamp_last_frame: 0,
             colour_index: 0,
+            touch_mode: false,
        }
     }
     pub fn set_state(
@@ -107,14 +111,17 @@ impl Game {
         height: u32, 
         block_size: u32, 
         draw_grid: bool, 
+        touch_mode: bool,
         context: web_sys::CanvasRenderingContext2d)
     {
-        log!("  re-setting game state! width: {}, height: {}, block_size: {}, draw_grid: {}", width, height, block_size, draw_grid);
+        log!("  re-setting game state! width: {}, height: {}, block_size: {}, draw_grid: {}, touch_mode: {}", 
+            width, height, block_size, draw_grid, touch_mode);
 
         self.width = width;
         self.height = height;
         self.block_size = block_size;
         self.draw_grid = draw_grid;
+        self.touch_mode = touch_mode;
         self.speed = 1;
         self.score = 0;
         self.context = Some(context);
@@ -174,7 +181,8 @@ impl Game {
     }
 
     fn frame_time_threshold(&self) -> u32 {
-        FRAME_RATE_SPEED_1 - self.speed * SPEED_INCREASE_MS
+        let speed_increase = if self.touch_mode {SPEED_INCREASE_MS_MODE_TOUCH} else {SPEED_INCREASE_MS_MODE_KEYBOARD};
+        FRAME_RATE_SPEED_1 - self.speed * speed_increase
     }
 
     fn process_input(&mut self) {
@@ -251,7 +259,20 @@ impl Game {
 
     fn handle_food_collision(&mut self) {
         let point = &self.snake[0];
-        if point == &self.food {
+        let touch_mode_collision = if self.touch_mode {
+            let relevant_points = vec![
+                Point{x: self.snake[0].x - 1, y: self.snake[0].y - 1},
+                Point{x: self.snake[0].x - 1, y: self.snake[0].y},
+                Point{x: self.snake[0].x    , y: self.snake[0].y - 1},
+                Point{x: self.snake[0].x + 1, y: self.snake[0].y},
+                Point{x: self.snake[0].x    , y: self.snake[0].y + 1},
+                Point{x: self.snake[0].x + 1, y: self.snake[0].y + 1},
+            ];
+            relevant_points.contains(&self.food)
+        } else {
+            false
+        };
+        if point == &self.food || touch_mode_collision {
             let last_point = self.snake[self.snake.len() - 1];
             self.snake.push(last_point);
             self.score = self.score + 1;
@@ -271,9 +292,31 @@ impl Game {
 
     fn place_food(&mut self) {
         let mut point = Point{x: 0, y: 0};
+
+        let food_x_min :u32 = if self.touch_mode {
+            TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
+        } else {
+            0
+        };
+        let food_y_min :u32 = if self.touch_mode {
+            TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
+        } else {
+            0
+        };
+        let food_x_max :u32 = if self.touch_mode {
+            self.width - TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
+        } else {
+            self.width
+        };
+        let food_y_max :u32 = if self.touch_mode {
+            self.height - TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
+        } else {
+            self.height
+        };
+
         loop {
-            point.x = random(0, self.calc_point_compontent(self.width));
-            point.y = random(0, self.calc_point_compontent(self.height));
+            point.x = random(food_x_min, self.calc_point_compontent(food_x_max));
+            point.y = random(food_y_min, self.calc_point_compontent(food_y_max));
 
             if !self.snake.contains(&point) {
                 break;

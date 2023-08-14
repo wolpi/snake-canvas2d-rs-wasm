@@ -106,12 +106,14 @@ pub fn create_game() {
     let height_element = document.get_element_by_id("height").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let block_size_element = document.get_element_by_id("block-size").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let grid_element = document.get_element_by_id("grid").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
+    let touch_mode_element = document.get_element_by_id("touch-mode").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     log!("  got parameter elements");
 
     let width = width_element.value_as_number() as u32;
     let height = height_element.value_as_number() as u32;
     let block_size = block_size_element.value_as_number() as u32;
     let draw_grid = grid_element.checked();
+    let touch_mode = touch_mode_element.checked();
     log!("  got parameter values");
 
     let canvas = document.get_element_by_id("canvas").unwrap();
@@ -131,7 +133,7 @@ pub fn create_game() {
     log!("  got canvas context");
 
     unsafe {
-        GAME.set_state(width, height, block_size, draw_grid, context);
+        GAME.set_state(width, height, block_size, draw_grid, touch_mode, context);
     }
 
     start_world_loop();

@@ -9,7 +9,7 @@
         top: 0;
         left: 0;
         width: 99%;
-        height: 99%;
+        padding: 10px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -41,7 +41,7 @@
       #controls-info {
         margin-bottom: 40px;
       }
-      .touch-line-container {
+      .touch-row-container {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -49,15 +49,22 @@
       }
       .touch-control {
         margin: 10px;
-        width: 50px;
-        height: 50px;
-        line-height: 50px;
         text-align: center;
-        font-size: 50px;
         cursor: pointer;
-      }
-      #touch-pause {
         border: 2px solid black;
+        background-color: white;
+      }
+      #touch-up, #touch-down {
+        width: 98%;
+        height: 150px;
+        line-height: 150px;
+        font-size: 90px;
+      }
+      #touch-left, #touch-right, #touch-pause {
+        width: 500px;
+        height: 200px;
+        line-height: 200px;
+        font-size: 90px;
       }
     </style>
   </head>
@@ -67,6 +74,7 @@
       Height: <input type="number" id="height" value="480">
       Block Size: <input type="number" id="block-size" value="15">
       <label for="grid">Grid:</label> <input type="checkbox" id="grid">
+      <label for="touch-mode">Touch Mode:</label> <input type="checkbox" id="touch-mode">
       <span id="create" class="dummy-button">Play !</span><!-- don't use button element to avoid issues with focus -->
     </div>
     <div id="score-block">
@@ -76,17 +84,13 @@
     <canvas id="canvas"></canvas>
     <div id="controls-info">Use a,s,d,w to control snake, space to pause</div>
     <div id="touch-controls">
-      <div class="touch-line-container">
-        <div class="touch-control" id="touch-up">⬆️</div>
-      </div>
-      <div class="touch-line-container">
+      <div class="touch-control" id="touch-up">⬆️</div>
+      <div class="touch-row-container">
         <div class="touch-control" id="touch-left">⬅️</div>
-        <div class="touch-control" id="touch-pause"> </div>
+        <div class="touch-control" id="touch-pause">pause</div>
         <div class="touch-control" id="touch-right">➡️</div>
       </div>
-      <div class="touch-line-container">
-        <div class="touch-control" id="touch-down">⬇️</div>
-      </div>
+      <div class="touch-control" id="touch-down">⬇️</div>
     </div>
   </body>
 </html>
