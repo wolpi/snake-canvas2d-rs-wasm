@@ -54,6 +54,7 @@ fn register_event_listener_create(document: &web_sys::Document) -> Result<(), Js
 fn register_event_listener_input_keyboard(document: &web_sys::Document) -> Result<(), JsValue> {
     let callback = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
         //log!("e.key_code(): {}", e.key_code());
+        e.prevent_default();
         unsafe {
             match e.key_code() {
                 0x41 => GAME.set_input('a'),
