@@ -26,5 +26,5 @@ pub fn handle_js_error(result: Result<(), JsValue>) {
 }
 
 pub fn random(min :u32, max :i32) -> i32 {
-    js_sys::Math::floor(js_sys::Math::random() * max as f64 - min as f64) as i32 + min as i32
+    (js_sys::Math::floor(js_sys::Math::random() * max as f64 - min as f64) as u32 + min) as i32
 }

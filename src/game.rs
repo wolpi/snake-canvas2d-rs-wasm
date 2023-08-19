@@ -293,30 +293,21 @@ impl Game {
     fn place_food(&mut self) {
         let mut point = Point{x: 0, y: 0};
 
-        let food_x_min :u32 = if self.touch_mode {
-            TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
-        } else {
-            0
-        };
-        let food_y_min :u32 = if self.touch_mode {
-            TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
-        } else {
-            0
-        };
-        let food_x_max :u32 = if self.touch_mode {
-            self.width - TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
-        } else {
-            self.width
-        };
-        let food_y_max :u32 = if self.touch_mode {
-            self.height - TOUCH_MODE_FOOD_BORDER_OFFSET * self.block_size
-        } else {
-            self.height
-        };
+        let mut food_x_min :u32 = 0;
+        let mut food_y_min :u32 = 0;
+        let mut food_x_max :i32 = self.calc_point_compontent(self.width);
+        let mut food_y_max :i32 = self.calc_point_compontent(self.height);
+
+        if self.touch_mode {
+            food_x_min = TOUCH_MODE_FOOD_BORDER_OFFSET;
+            food_y_min = TOUCH_MODE_FOOD_BORDER_OFFSET;
+            food_x_max = food_x_max - TOUCH_MODE_FOOD_BORDER_OFFSET as i32;
+            food_y_max = food_y_max - TOUCH_MODE_FOOD_BORDER_OFFSET as i32;
+        }
 
         loop {
-            point.x = random(food_x_min, self.calc_point_compontent(food_x_max));
-            point.y = random(food_y_min, self.calc_point_compontent(food_y_max));
+            point.x = random(food_x_min, food_x_max);
+            point.y = random(food_y_min, food_y_max);
 
             if !self.snake.contains(&point) {
                 break;
