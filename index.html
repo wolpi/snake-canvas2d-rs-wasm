@@ -66,6 +66,15 @@
         line-height: 100px;
         font-size: 70px;
       }
+      th {
+        background-color: grey;
+        border: 1px solid black;
+      }
+      td {
+        border: 1px solid black;
+        padding-left: 5px;
+        padding-right: 5px;
+      }
     </style>
   </head>
   <body id="body">
@@ -75,6 +84,7 @@
       Block Size: <input type="number" id="block-size" value="15">
       <label for="grid">Grid:</label> <input type="checkbox" id="grid">
       <label for="touch-mode">Touch Mode:</label> <input type="checkbox" id="touch-mode">
+      Highscoroe Name: <input type="text" id="name" value="Player">
       <span id="create" class="dummy-button">Play !</span><!-- don't use button element to avoid issues with focus -->
     </div>
     <div id="score-block">
@@ -91,6 +101,18 @@
         <div class="touch-control" id="touch-right">➡️</div>
       </div>
       <div class="touch-control" id="touch-down">⬇️</div>
+    </div>
+    <div id="highscores">
+      <h2>Highscores</h2>
+      <table id="highscores-table">
+        <tr>
+          <th>Rank</th>
+          <th>Name</th>
+          <th>Score</th>
+          <th>Mode</th>
+          <th>Time</th>
+        </tr>
+      </table>
     </div>
   </body>
 </html>

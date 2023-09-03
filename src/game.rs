@@ -2,6 +2,7 @@ use crate::utils::log;
 use crate::utils::random;
 use crate::textdisplay::update_text_display;
 use crate::textdisplay::set_background_colour;
+use crate::highscore;
 
 use wasm_bindgen::prelude::*;
 
@@ -81,6 +82,7 @@ pub struct Game {
     timestamp_last_frame: u32,
     colour_index: usize,
     touch_mode: bool,
+    name: String,
 }
 
 
@@ -97,12 +99,13 @@ impl Game {
             snake: Vec::new(),
             direction: Direction::DOWN,
             food: Point{x:0,y:0},
-            over: false,
+            over: true,
             pause: false,
             input: DEFAULT_INPUT,
             timestamp_last_frame: 0,
             colour_index: 0,
             touch_mode: false,
+            name: String::new(),
        }
     }
     pub fn set_state(
@@ -112,6 +115,7 @@ impl Game {
         block_size: u32, 
         draw_grid: bool, 
         touch_mode: bool,
+        name: &str,
         context: web_sys::CanvasRenderingContext2d)
     {
         log!("  re-setting game state! width: {}, height: {}, block_size: {}, draw_grid: {}, touch_mode: {}", 
@@ -122,6 +126,7 @@ impl Game {
         self.block_size = block_size;
         self.draw_grid = draw_grid;
         self.touch_mode = touch_mode;
+        self.name = name.to_string();
         self.speed = 1;
         self.score = 0;
         self.context = Some(context);
@@ -146,6 +151,10 @@ impl Game {
             i = i + 1;
         }
         snake
+    }
+
+    pub fn is_over(&self) -> bool {
+        self.over
     }
 
     pub fn set_input(&mut self, input: char) {
@@ -362,6 +371,9 @@ impl Game {
         log!("game over");
         self.over = true;
         self.draw_game_over();
+        let mode = if self.touch_mode {"Touch"} else {"Keyboard"};
+        highscore::add_score(&self.name, self.score, mode);
+        highscore::print_highscores();
     }
 
     fn calc_center(&self) -> Point {

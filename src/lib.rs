@@ -1,5 +1,6 @@
 mod utils;
 mod textdisplay;
+mod highscore;
 mod game;
 
 use crate::game::Game;
@@ -22,6 +23,7 @@ fn start() -> Result<(), JsValue> {
 
     let document = web_sys::window().unwrap().document().unwrap();
     register_event_listeners(&document)?;
+    highscore::print_highscores();
 
     Ok(())
 }
@@ -54,15 +56,17 @@ fn register_event_listener_create(document: &web_sys::Document) -> Result<(), Js
 fn register_event_listener_input_keyboard(document: &web_sys::Document) -> Result<(), JsValue> {
     let callback = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
         //log!("e.key_code(): {}", e.key_code());
-        e.prevent_default();
         unsafe {
-            match e.key_code() {
-                0x41 => GAME.set_input('a'),
-                0x53 => GAME.set_input('s'),
-                0x44 => GAME.set_input('d'),
-                0x57 => GAME.set_input('w'),
-                32 => GAME.set_input(' '),
-                _ => GAME.set_input(game::DEFAULT_INPUT),
+            if !GAME.is_over() {
+                e.prevent_default();
+                match e.key_code() {
+                    0x41 => GAME.set_input('a'),
+                    0x53 => GAME.set_input('s'),
+                    0x44 => GAME.set_input('d'),
+                    0x57 => GAME.set_input('w'),
+                    32 => GAME.set_input(' '),
+                    _ => GAME.set_input(game::DEFAULT_INPUT),
+                }
             }
         }
     }) as Box<dyn FnMut(_)>);
@@ -108,6 +112,7 @@ pub fn create_game() {
     let block_size_element = document.get_element_by_id("block-size").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let grid_element = document.get_element_by_id("grid").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let touch_mode_element = document.get_element_by_id("touch-mode").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
+    let name_element = document.get_element_by_id("name").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     log!("  got parameter elements");
 
     let width = width_element.value_as_number() as u32;
@@ -115,6 +120,7 @@ pub fn create_game() {
     let block_size = block_size_element.value_as_number() as u32;
     let draw_grid = grid_element.checked();
     let touch_mode = touch_mode_element.checked();
+    let name = name_element.value();
     log!("  got parameter values");
 
     let canvas = document.get_element_by_id("canvas").unwrap();
@@ -134,7 +140,7 @@ pub fn create_game() {
     log!("  got canvas context");
 
     unsafe {
-        GAME.set_state(width, height, block_size, draw_grid, touch_mode, context);
+        GAME.set_state(width, height, block_size, draw_grid, touch_mode, &name, context);
     }
 
     start_world_loop();
