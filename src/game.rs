@@ -9,11 +9,11 @@ use wasm_bindgen::prelude::*;
 
 pub const DEFAULT_INPUT: char = '1';
 const INITIAL_SNAKE_LEN: usize = 3;
-const FRAME_RATE_SPEED_1: u32 = 1000 / 10;
-const SPEED_INCREASE_MS_MODE_KEYBOARD: u32 = 10;
-const SPEED_INCREASE_MS_MODE_TOUCH: u32 = 5;
+const FRAME_RATE_SPEED_1: i32 = 1000 / 10;
+const SPEED_INCREASE_MS_MODE_KEYBOARD: i32 = 10;
+const SPEED_INCREASE_MS_MODE_TOUCH: i32 = 5;
 const SPEED_INCREASE_AT_SCORE: u32 = 3;
-const SPEED_TO_SET_BG_COL: u32 = 2;
+const SPEED_TO_SET_BG_COL: i32 = 2;
 const TOUCH_MODE_FOOD_BORDER_OFFSET: u32 = 5;
 
 const COLOURS: [&str; 21] = [
@@ -70,7 +70,7 @@ pub struct Game {
     height: u32,
     block_size: u32,
     draw_grid: bool,
-    speed: u32,
+    speed: i32,
     score: u32,
     context: Option<web_sys::CanvasRenderingContext2d>,
     snake: Vec<Point>,
@@ -137,7 +137,7 @@ impl Game {
         self.timestamp_last_frame = 0;
         self.colour_index = 0;
         set_background_colour("#FFF");
-        update_text_display(self.score, self.speed);
+        update_text_display(self.score, self.speed as u32);
         self.place_food();
     }
 
@@ -181,7 +181,7 @@ impl Game {
 
     fn enough_time_passed(&mut self, timestamp :u32) -> bool {
         if timestamp > self.timestamp_last_frame {
-            if timestamp - self.timestamp_last_frame > self.frame_time_threshold() {
+            if (timestamp - self.timestamp_last_frame) as i32 > self.frame_time_threshold() {
                 self.timestamp_last_frame = timestamp;
                 return true;
             }
@@ -189,7 +189,7 @@ impl Game {
         false
     }
 
-    fn frame_time_threshold(&self) -> u32 {
+    fn frame_time_threshold(&self) -> i32 {
         let speed_increase = if self.touch_mode {SPEED_INCREASE_MS_MODE_TOUCH} else {SPEED_INCREASE_MS_MODE_KEYBOARD};
         FRAME_RATE_SPEED_1 - self.speed * speed_increase
     }
@@ -294,7 +294,7 @@ impl Game {
                     set_background_colour(BACKGROUND_COLOURS[bg_col_idx]);
                 }
             }
-            update_text_display(self.score, self.speed);
+            update_text_display(self.score, self.speed as u32);
             self.place_food();
         }
     }
