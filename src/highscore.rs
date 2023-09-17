@@ -1,5 +1,6 @@
 use crate::utils::log;
 use core::cmp::Ordering;
+use std::cmp::Ordering::Greater;
 use serde::{Deserialize, Serialize};
 use chrono::offset::Local;
 
@@ -105,21 +106,19 @@ pub fn print_highscores() {
 }
 
 fn find_latest_entry(entries :&Vec<HighscoreEntry>) -> u32 {
-    let mut latest = 0;
+    let mut latest_idx = 0;
     let mut i = 0;
-    let mut last_entry :&HighscoreEntry = &HighscoreEntry{
-        name: "".to_string(), score: 0, mode: "".to_string(), time: "zzz".to_string()
+    let mut latest_entry:&HighscoreEntry = &HighscoreEntry{
+        name: "".to_string(), score: 0, mode: "".to_string(), time: "0".to_string()
     };
     for entry in entries {
-        if i > 0 {
-            if entry.time > last_entry.time {
-                latest = i;
-            }
+        if entry.time.cmp(&latest_entry.time) == Greater {
+            latest_idx = i;
+            latest_entry = entry;
         }
-        last_entry = entry;
         i += 1;
     }
-    return latest;
+    return latest_idx;
 }
 fn print_entry(
         document :&web_sys::Document,
