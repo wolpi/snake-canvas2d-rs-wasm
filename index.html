@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
     <title>snake canvas2d rs wasm</title>
@@ -82,12 +82,12 @@
   </head>
   <body id="body">
     <div id="creation-bar">
-      Width: <input type="number" id="width" value="640">
-      Height: <input type="number" id="height" value="480">
-      Block Size: <input type="number" id="block-size" value="15">
+      <label for="width">Width:</label> <input type="number" id="width" value="640">
+      <label for="height">Height:</label> <input type="number" id="height" value="480">
+      <label for="block-size">Block Size:</label> <input type="number" id="block-size" value="15">
       <label for="grid">Grid:</label> <input type="checkbox" id="grid">
       <label for="touch-mode">Touch Mode:</label> <input type="checkbox" id="touch-mode">
-      Highscoroe Name: <input type="text" id="name" value="Player">
+      <label for="name">Highscoroe Name:</label> <input type="text" id="name" value="Player">
       <span id="create" class="dummy-button">Play !</span><!-- don't use button element to avoid issues with focus -->
     </div>
     <div id="score-block">
