@@ -84,9 +84,15 @@ pub fn print_highscores() {
             if json_opt.is_some() {
                 let json = json_opt.unwrap();
                 entries = serde_json::from_str(&json).unwrap();
+                let latest = find_latest_entry(&entries);
                 let mut i = 0;
                 for entry in entries {
-                    let result = print_entry(&document, &table, &entry, i+1);
+                    let result = print_entry(
+                        &document,
+                        &table,
+                        &entry,
+                        i+1,
+                        i == latest);
                     if result.is_err() {
                         log!("could not crate highscore table elements: {}", result.err().unwrap().as_string().unwrap());
                         break;
@@ -98,14 +104,35 @@ pub fn print_highscores() {
     }
 }
 
+fn find_latest_entry(entries :&Vec<HighscoreEntry>) -> u32 {
+    let mut latest = 0;
+    let mut i = 0;
+    let mut last_entry :&HighscoreEntry = &HighscoreEntry{
+        name: "".to_string(), score: 0, mode: "".to_string(), time: "zzz".to_string()
+    };
+    for entry in entries {
+        if i > 0 {
+            if entry.time > last_entry.time {
+                latest = i;
+            }
+        }
+        last_entry = entry;
+        i += 1;
+    }
+    return latest;
+}
 fn print_entry(
         document :&web_sys::Document,
         table :&web_sys::HtmlElement,
         entry :&HighscoreEntry,
-        rank : u32)
+        rank :u32,
+        highlight :bool)
         -> Result<(), wasm_bindgen::JsValue> {
     let tr = document.create_element("tr").unwrap();
     table.append_child(&tr)?;
+    if highlight {
+        tr.set_class_name("latest");
+    }
     let td_rank = document.create_element("td").unwrap();
     let td_name = document.create_element("td").unwrap();
     let td_score = document.create_element("td").unwrap();
