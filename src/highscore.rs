@@ -1,6 +1,5 @@
 use crate::utils::log;
 use core::cmp::Ordering;
-use std::cmp::Ordering::Greater;
 use serde::{Deserialize, Serialize};
 use chrono::offset::Local;
 
@@ -31,7 +30,7 @@ impl PartialOrd for HighscoreEntry {
 }
 
 
-pub fn add_score(name :&str, score :u32, mode :&str) {
+pub fn add_score(name :&str, score :u32, mode :&str) -> Option<String> {
     let window = web_sys::window().unwrap();
     let local_storage_opt = window.local_storage().unwrap();
     if local_storage_opt.is_some() {
@@ -49,12 +48,14 @@ pub fn add_score(name :&str, score :u32, mode :&str) {
         } else {
             entries = Vec::new();
         }
+
         let new_entry = HighscoreEntry {
             name: name.to_string(),
             score: score,
             mode: mode.to_string(),
             time: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         };
+        let new_entry_time = new_entry.time.clone();
         entries.push(new_entry);
         entries.sort();
         while entries.len() > MAX_ENTRIES {
@@ -64,11 +65,14 @@ pub fn add_score(name :&str, score :u32, mode :&str) {
         let result = local_storage.set_item(STORAGE_KEY, &json);
         if result.is_err() {
             log!("could not save highscore to local_storage: {}", result.err().unwrap().as_string().unwrap());
+        } else {
+            return Some(new_entry_time);
         }
     }
+    return None;
 }
 
-pub fn print_highscores() {
+pub fn print_highscores(latest_timestamp :Option<String>) {
     let window = web_sys::window().unwrap();
     let local_storage_opt = window.local_storage().unwrap();
     if local_storage_opt.is_some() {
@@ -85,7 +89,6 @@ pub fn print_highscores() {
             if json_opt.is_some() {
                 let json = json_opt.unwrap();
                 entries = serde_json::from_str(&json).unwrap();
-                let latest = find_latest_entry(&entries);
                 let mut i = 0;
                 for entry in entries {
                     let result = print_entry(
@@ -93,7 +96,7 @@ pub fn print_highscores() {
                         &table,
                         &entry,
                         i+1,
-                        i == latest);
+                        latest_timestamp.is_some() && latest_timestamp.as_ref().unwrap() == &entry.time);
                     if result.is_err() {
                         log!("could not crate highscore table elements: {}", result.err().unwrap().as_string().unwrap());
                         break;
@@ -103,22 +106,6 @@ pub fn print_highscores() {
             }
         }
     }
-}
-
-fn find_latest_entry(entries :&Vec<HighscoreEntry>) -> u32 {
-    let mut latest_idx = 0;
-    let mut i = 0;
-    let mut latest_entry:&HighscoreEntry = &HighscoreEntry{
-        name: "".to_string(), score: 0, mode: "".to_string(), time: "0".to_string()
-    };
-    for entry in entries {
-        if entry.time.cmp(&latest_entry.time) == Greater {
-            latest_idx = i;
-            latest_entry = entry;
-        }
-        i += 1;
-    }
-    return latest_idx;
 }
 fn print_entry(
         document :&web_sys::Document,

@@ -372,8 +372,8 @@ impl Game {
         self.over = true;
         self.draw_game_over();
         let mode = if self.touch_mode {"Touch"} else {"Keyboard"};
-        highscore::add_score(&self.name, self.score, mode);
-        highscore::print_highscores();
+        let latest_timestamp = highscore::add_score(&self.name, self.score, mode);
+        highscore::print_highscores(latest_timestamp);
     }
 
     fn calc_center(&self) -> Point {

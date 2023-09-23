@@ -23,7 +23,7 @@ fn start() -> Result<(), JsValue> {
 
     let document = web_sys::window().unwrap().document().unwrap();
     register_event_listeners(&document)?;
-    highscore::print_highscores();
+    highscore::print_highscores(None);
 
     Ok(())
 }
