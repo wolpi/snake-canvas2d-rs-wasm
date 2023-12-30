@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 
 
 pub const DEFAULT_INPUT: char = '1';
+pub const INPUT_DOWN: char = 's';
 const INITIAL_SNAKE_LEN: usize = 3;
 const FRAME_RATE_SPEED_1: i32 = 1000 / 10;
 const SPEED_INCREASE_MS_MODE_KEYBOARD: i32 = 10;
@@ -134,6 +135,7 @@ impl Game {
         self.direction = Direction::DOWN;
         self.over = false;
         self.pause = false;
+        self.input = INPUT_DOWN;
         self.timestamp_last_frame = 0;
         self.colour_index = 0;
         set_background_colour("#FFF");
