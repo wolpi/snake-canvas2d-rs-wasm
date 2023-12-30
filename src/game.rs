@@ -398,8 +398,9 @@ impl Game {
         log!("game over");
         self.over = true;
         self.draw_game_over();
-        let mode = if self.touch_mode {"Touch"} else {"Keyboard"};
-        let latest_timestamp = highscore::add_score(&self.name, self.score, mode);
+        let input_mode = if self.touch_mode {"Touch"} else {"Keyboard"};
+        let game_mode = if self.game_mode == GameMode::FAST {"Fast Snake"} else {"Long Snake"};
+        let latest_timestamp = highscore::add_score(&self.name, self.score, input_mode, game_mode);
         highscore::print_highscores(latest_timestamp);
     }
 

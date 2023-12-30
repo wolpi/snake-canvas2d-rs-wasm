@@ -14,23 +14,32 @@ struct HighscoreEntry {
     name: String,
     score: u32,
     mode: String,
+    #[serde(default = "default_game_mode")]
+    game_mode: String,
     time: String,
+}
+
+fn default_game_mode() -> String {
+    "Fast Snake".to_string()
 }
 
 impl PartialOrd for HighscoreEntry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.mode == other.mode {
-            if self.score == other.score {
-                return Some(self.time.cmp(&other.time));
+        if self.game_mode == other.game_mode {
+            if self.mode == other.mode {
+                if self.score == other.score {
+                    return Some(self.time.cmp(&other.time));
+                }
+                return Some(other.score.cmp(&self.score));
             }
-            return Some(other.score.cmp(&self.score));
+            return Some(self.mode.cmp(&other.mode));
         }
-        return Some(self.mode.cmp(&other.mode));
+        return Some(self.game_mode.cmp(&other.game_mode));
     }
 }
 
 
-pub fn add_score(name :&str, score :u32, mode :&str) -> Option<String> {
+pub fn add_score(name :&str, score :u32, input_mode :&str, game_mode :&str) -> Option<String> {
     let window = web_sys::window().unwrap();
     let local_storage_opt = window.local_storage().unwrap();
     if local_storage_opt.is_some() {
@@ -52,7 +61,8 @@ pub fn add_score(name :&str, score :u32, mode :&str) -> Option<String> {
         let new_entry = HighscoreEntry {
             name: name.to_string(),
             score: score,
-            mode: mode.to_string(),
+            mode: input_mode.to_string(),
+            game_mode: game_mode.to_string(),
             time: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         };
         let new_entry_time = new_entry.time.clone();
@@ -122,16 +132,19 @@ fn print_entry(
     let td_rank = document.create_element("td").unwrap();
     let td_name = document.create_element("td").unwrap();
     let td_score = document.create_element("td").unwrap();
+    let td_game_mode = document.create_element("td").unwrap();
     let td_mode = document.create_element("td").unwrap();
     let td_time = document.create_element("td").unwrap();
     tr.append_child(&td_rank)?;
     tr.append_child(&td_name)?;
     tr.append_child(&td_score)?;
+    tr.append_child(&td_game_mode)?;
     tr.append_child(&td_mode)?;
     tr.append_child(&td_time)?;
     td_rank.set_text_content(Some(&rank.to_string()));
     td_name.set_text_content(Some(&entry.name));
     td_score.set_text_content(Some(&entry.score.to_string()));
+    td_game_mode.set_text_content(Some(&entry.game_mode));
     td_mode.set_text_content(Some(&entry.mode));
     td_time.set_text_content(Some(&entry.time));
     Ok(())
