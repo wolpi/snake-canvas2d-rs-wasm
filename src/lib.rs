@@ -58,7 +58,7 @@ fn register_event_listener_create(document: &web_sys::Document) -> Result<(), Js
 }
 
 fn register_event_listener_input_keyboard(document: &web_sys::Document) -> Result<(), JsValue> {
-    let callback = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
+    let callback_keydown = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
         //log!("e.key_code(): {}", e.key_code());
         unsafe {
             if !GAME.is_over() {
@@ -71,14 +71,26 @@ fn register_event_listener_input_keyboard(document: &web_sys::Document) -> Resul
                     32 => GAME.set_input(' '),
                     _ => GAME.set_input(game::DEFAULT_INPUT),
                 }
+                GAME.set_pressed(true);
             }
         }
     }) as Box<dyn FnMut(_)>);
 
-    document.get_element_by_id("body").unwrap()
-        .add_event_listener_with_callback("keydown", &callback.as_ref().unchecked_ref())?;
+    let callback_keyup = Closure::wrap(Box::new(|e: web_sys::KeyboardEvent| {
+        unsafe {
+            if !GAME.is_over() {
+                e.prevent_default();
+                GAME.set_pressed(false);
+            }
+        }
+    }) as Box<dyn FnMut(_)>);
 
-    callback.forget();
+    let body = document.get_element_by_id("body").unwrap();
+    body.add_event_listener_with_callback("keydown", &callback_keydown.as_ref().unchecked_ref())?;
+    body.add_event_listener_with_callback("keyup", &callback_keyup.as_ref().unchecked_ref())?;
+
+    callback_keydown.forget();
+    callback_keyup.forget();
 
     Ok(())
 }
@@ -116,6 +128,7 @@ pub fn create_game() {
     let block_size_element = document.get_element_by_id("block-size").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let grid_element = document.get_element_by_id("grid").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     let touch_mode_element = document.get_element_by_id("touch-mode").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
+    let game_mode_element = document.get_element_by_id("game-mode").unwrap().dyn_into::<web_sys::HtmlSelectElement>().unwrap();
     let name_element = document.get_element_by_id("name").unwrap().dyn_into::<web_sys::HtmlInputElement>().unwrap();
     log!("  got parameter elements");
 
@@ -124,6 +137,12 @@ pub fn create_game() {
     let block_size = block_size_element.value_as_number() as u32;
     let draw_grid = grid_element.checked();
     let touch_mode = touch_mode_element.checked();
+    let game_mode_str = game_mode_element.value();
+    let game_mode = if game_mode_str.starts_with("Fast") {
+        game::GameMode::FAST
+    } else {
+        game::GameMode::LONG
+    };
     let name = name_element.value();
     log!("  got parameter values");
 
@@ -144,7 +163,7 @@ pub fn create_game() {
     log!("  got canvas context");
 
     unsafe {
-        GAME.set_state(width, height, block_size, draw_grid, touch_mode, &name, context);
+        GAME.set_state(width, height, block_size, draw_grid, touch_mode, game_mode, &name, context);
     }
 
     start_world_loop();

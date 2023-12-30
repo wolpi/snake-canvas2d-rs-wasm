@@ -31,5 +31,6 @@ features = [
   'Element',
   'HtmlCanvasElement',
   'HtmlInputElement',
+  'HtmlSelectElement',
   'CssStyleDeclaration',
 ]

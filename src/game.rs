@@ -66,6 +66,13 @@ enum Direction {
 }
 
 
+#[derive(PartialEq)]
+pub enum GameMode {
+    FAST,
+    LONG,
+}
+
+
 pub struct Game {
     width: u32,
     height: u32,
@@ -80,9 +87,11 @@ pub struct Game {
     over: bool,
     pause: bool,
     input: char,
+    pressed: bool,
     timestamp_last_frame: u32,
     colour_index: usize,
     touch_mode: bool,
+    game_mode: GameMode,
     name: String,
 }
 
@@ -103,9 +112,11 @@ impl Game {
             over: true,
             pause: false,
             input: DEFAULT_INPUT,
+            pressed: false,
             timestamp_last_frame: 0,
             colour_index: 0,
             touch_mode: false,
+            game_mode: GameMode::FAST,
             name: String::new(),
        }
     }
@@ -116,6 +127,7 @@ impl Game {
         block_size: u32, 
         draw_grid: bool, 
         touch_mode: bool,
+        game_mode: GameMode,
         name: &str,
         context: web_sys::CanvasRenderingContext2d)
     {
@@ -127,6 +139,7 @@ impl Game {
         self.block_size = block_size;
         self.draw_grid = draw_grid;
         self.touch_mode = touch_mode;
+        self.game_mode = game_mode;
         self.name = name.to_string();
         self.speed = 1;
         self.score = 0;
@@ -136,6 +149,7 @@ impl Game {
         self.over = false;
         self.pause = false;
         self.input = INPUT_DOWN;
+        self.pressed = false;
         self.timestamp_last_frame = 0;
         self.colour_index = 0;
         set_background_colour("#FFF");
@@ -161,6 +175,10 @@ impl Game {
 
     pub fn set_input(&mut self, input: char) {
         self.input = input;
+    }
+
+    pub fn set_pressed(&mut self, pressed: bool) {
+        self.pressed = pressed;
     }
 
     pub fn world_loop_contents(&mut self, timestamp :u32) -> bool {
@@ -193,7 +211,12 @@ impl Game {
 
     fn frame_time_threshold(&self) -> i32 {
         let speed_increase = if self.touch_mode {SPEED_INCREASE_MS_MODE_TOUCH} else {SPEED_INCREASE_MS_MODE_KEYBOARD};
-        FRAME_RATE_SPEED_1 - self.speed * speed_increase
+        let speed_to_use = if self.pressed && self.game_mode == GameMode::LONG {
+            6
+        } else {
+            self.speed
+        };
+        FRAME_RATE_SPEED_1 - speed_to_use * speed_increase
     }
 
     fn process_input(&mut self) {
@@ -288,12 +311,14 @@ impl Game {
             self.snake.push(last_point);
             self.score = self.score + 1;
             self.inc_colour_index();
-            if self.score % SPEED_INCREASE_AT_SCORE == 0 {
-                self.speed = self.speed + 1;
-                log!("frame_time_threshold: {}", self.frame_time_threshold());
-                if self.speed >= SPEED_TO_SET_BG_COL {
-                    let bg_col_idx = (self.speed - SPEED_TO_SET_BG_COL) as usize % BACKGROUND_COLOURS.len();
-                    set_background_colour(BACKGROUND_COLOURS[bg_col_idx]);
+            if self.game_mode == GameMode::FAST {
+                if self.score % SPEED_INCREASE_AT_SCORE == 0 {
+                    self.speed = self.speed + 1;
+                    log!("frame_time_threshold: {}", self.frame_time_threshold());
+                    if self.speed >= SPEED_TO_SET_BG_COL {
+                        let bg_col_idx = (self.speed - SPEED_TO_SET_BG_COL) as usize % BACKGROUND_COLOURS.len();
+                        set_background_colour(BACKGROUND_COLOURS[bg_col_idx]);
+                    }
                 }
             }
             update_text_display(self.score, self.speed as u32);
