@@ -41,7 +41,11 @@ fn register_event_listeners(document: &web_sys::Document) -> Result<(), JsValue>
 fn register_event_listener_create(document: &web_sys::Document) -> Result<(), JsValue> {
     let callback = Closure::wrap(Box::new(|_e: web_sys::Event| {
 
-        create_game();
+        unsafe {
+            if GAME.is_over() {
+               create_game();
+            }
+        }
 
     }) as Box<dyn FnMut(_)>);
 
