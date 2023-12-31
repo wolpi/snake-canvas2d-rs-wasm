@@ -28,3 +28,10 @@ pub fn handle_js_error(result: Result<(), JsValue>) {
 pub fn random(min :u32, max :i32) -> i32 {
     (js_sys::Math::floor(js_sys::Math::random() * max as f64 - min as f64) as u32 + min) as i32
 }
+
+pub fn format_duration(duration :u32) -> String {
+    let duration_in_secs = duration / 1000;
+    let minutes = duration_in_secs / 60;
+    let seconds = duration_in_secs % 60;
+    return format!("{:02}:{:02}", minutes, seconds)
+}

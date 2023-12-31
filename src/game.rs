@@ -1,6 +1,7 @@
 use crate::utils::log;
 use crate::utils::random;
 use crate::textdisplay::update_text_display;
+use crate::textdisplay::update_duration_display;
 use crate::textdisplay::set_background_colour;
 use crate::highscore;
 
@@ -93,6 +94,9 @@ pub struct Game {
     touch_mode: bool,
     game_mode: GameMode,
     name: String,
+    timestamp_game_start: u32,
+    timestamp_pause_start: u32,
+    pause_duration_sum: u32,
 }
 
 
@@ -118,7 +122,10 @@ impl Game {
             touch_mode: false,
             game_mode: GameMode::FAST,
             name: String::new(),
-       }
+            timestamp_game_start: 0,
+            timestamp_pause_start: 0,
+            pause_duration_sum: 0,
+        }
     }
     pub fn set_state(
         &mut self, 
@@ -152,6 +159,9 @@ impl Game {
         self.pressed = false;
         self.timestamp_last_frame = 0;
         self.colour_index = 0;
+        self.timestamp_game_start = 0;
+        self.timestamp_pause_start = 0;
+        self.pause_duration_sum = 0;
         set_background_colour("#FFF");
         update_text_display(self.score, self.speed as u32);
         self.place_food();
@@ -182,16 +192,20 @@ impl Game {
     }
 
     pub fn world_loop_contents(&mut self, timestamp :u32) -> bool {
+        if self.timestamp_game_start == 0 {
+            self.timestamp_game_start = timestamp;
+        }
         if !self.over && self.enough_time_passed(timestamp) {
-            self.process_input();
+            self.process_input(timestamp);
             if self.pause {
                 self.draw_pause();
             } else {
                 let continue_rendering = self.update_world();
                 if continue_rendering {
+                    update_duration_display(self.calc_duration(timestamp));
                     self.draw();
                 } else {
-                    self.game_over();
+                    self.game_over(timestamp);
                     return false;
                 }
             }
@@ -219,7 +233,7 @@ impl Game {
         FRAME_RATE_SPEED_1 - speed_to_use * speed_increase
     }
 
-    fn process_input(&mut self) {
+    fn process_input(&mut self, timestamp :u32) {
         // don't allow opposite direction
         match &self.input {
             'a' => {
@@ -243,12 +257,22 @@ impl Game {
                 }
             },
             ' ' => {
-                log!("toggling pause");
-                self.pause = !self.pause;
-                self.input = DEFAULT_INPUT;
+                self.toggle_pause(timestamp);
             }
             _ => (),
         }
+    }
+
+    fn toggle_pause(&mut self, timestamp :u32) {
+        log!("toggling pause");
+        if !self.pause {
+            self.timestamp_pause_start = timestamp;
+        } else {
+            self.pause_duration_sum += timestamp - self.timestamp_pause_start;
+            self.timestamp_pause_start = 0;
+        }
+        self.pause = !self.pause;
+        self.input = DEFAULT_INPUT;
     }
 
     fn update_world(&mut self) -> bool {
@@ -394,14 +418,19 @@ impl Game {
         return rest_of_snake.contains(&first_point);
     }
 
-    fn game_over(&mut self) {
+    fn game_over(&mut self, timestamp :u32) {
         log!("game over");
         self.over = true;
         self.draw_game_over();
         let input_mode = if self.touch_mode {"Touch"} else {"Keyboard"};
         let game_mode = if self.game_mode == GameMode::FAST {"Fast Snake"} else {"Long Snake"};
-        let latest_timestamp = highscore::add_score(&self.name, self.score, input_mode, game_mode);
+        let duration = self.calc_duration(timestamp);
+        let latest_timestamp = highscore::add_score(&self.name, self.score, input_mode, game_mode, duration);
         highscore::print_highscores(latest_timestamp);
+    }
+
+    fn calc_duration(&self, timestamp :u32) -> u32 {
+        timestamp - self.timestamp_game_start - self.pause_duration_sum
     }
 
     fn calc_center(&self) -> Point {

@@ -1,4 +1,5 @@
 use crate::utils::log;
+use crate::utils::format_duration;
 use core::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 use chrono::offset::Local;
@@ -13,6 +14,8 @@ const MAX_ENTRIES: usize = 20;
 struct HighscoreEntry {
     name: String,
     score: u32,
+    #[serde(default = "default_duration")]
+    duration: u32,
     mode: String,
     #[serde(default = "default_game_mode")]
     game_mode: String,
@@ -23,12 +26,19 @@ fn default_game_mode() -> String {
     "Fast Snake".to_string()
 }
 
+fn default_duration() -> u32 {
+    (99 * 60 + 59) * 1000
+}
+
 impl PartialOrd for HighscoreEntry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.game_mode == other.game_mode {
             if self.mode == other.mode {
                 if self.score == other.score {
-                    return Some(self.time.cmp(&other.time));
+                    if self.duration == other.duration {
+                        return Some(self.time.cmp(&other.time));
+                    }
+                    return Some(self.duration.cmp(&other.duration));
                 }
                 return Some(other.score.cmp(&self.score));
             }
@@ -39,7 +49,7 @@ impl PartialOrd for HighscoreEntry {
 }
 
 
-pub fn add_score(name :&str, score :u32, input_mode :&str, game_mode :&str) -> Option<String> {
+pub fn add_score(name :&str, score :u32, input_mode :&str, game_mode :&str, duration :u32) -> Option<String> {
     let window = web_sys::window().unwrap();
     let local_storage_opt = window.local_storage().unwrap();
     if local_storage_opt.is_some() {
@@ -61,6 +71,7 @@ pub fn add_score(name :&str, score :u32, input_mode :&str, game_mode :&str) -> O
         let new_entry = HighscoreEntry {
             name: name.to_string(),
             score: score,
+            duration: duration,
             mode: input_mode.to_string(),
             game_mode: game_mode.to_string(),
             time: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
@@ -132,17 +143,20 @@ fn print_entry(
     let td_rank = document.create_element("td").unwrap();
     let td_name = document.create_element("td").unwrap();
     let td_score = document.create_element("td").unwrap();
+    let td_duration = document.create_element("td").unwrap();
     let td_game_mode = document.create_element("td").unwrap();
     let td_mode = document.create_element("td").unwrap();
     let td_time = document.create_element("td").unwrap();
     tr.append_child(&td_rank)?;
     tr.append_child(&td_name)?;
     tr.append_child(&td_score)?;
+    tr.append_child(&td_duration)?;
     tr.append_child(&td_game_mode)?;
     tr.append_child(&td_mode)?;
     tr.append_child(&td_time)?;
     td_rank.set_text_content(Some(&rank.to_string()));
     td_name.set_text_content(Some(&entry.name));
+    td_duration.set_text_content(Some(&(format_duration(entry.duration)).to_string()));
     td_score.set_text_content(Some(&entry.score.to_string()));
     td_game_mode.set_text_content(Some(&entry.game_mode));
     td_mode.set_text_content(Some(&entry.mode));
