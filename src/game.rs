@@ -1,6 +1,7 @@
 use crate::utils::log;
 use crate::utils::random;
 use crate::textdisplay::update_text_display;
+use crate::textdisplay::update_speed_display;
 use crate::textdisplay::update_duration_display;
 use crate::textdisplay::set_background_colour;
 use crate::highscore;
@@ -189,6 +190,14 @@ impl Game {
 
     pub fn set_pressed(&mut self, pressed: bool) {
         self.pressed = pressed;
+        if self.game_mode == GameMode::LONG {
+            if pressed {
+                self.speed = 6;
+            } else {
+                self.speed = 1;
+            }
+            update_speed_display(self.speed);
+        }
     }
 
     pub fn world_loop_contents(&mut self, timestamp :u32) -> bool {
@@ -225,12 +234,7 @@ impl Game {
 
     fn frame_time_threshold(&self) -> i32 {
         let speed_increase = if self.touch_mode {SPEED_INCREASE_MS_MODE_TOUCH} else {SPEED_INCREASE_MS_MODE_KEYBOARD};
-        let speed_to_use = if self.pressed && self.game_mode == GameMode::LONG {
-            6
-        } else {
-            self.speed
-        };
-        FRAME_RATE_SPEED_1 - speed_to_use * speed_increase
+        FRAME_RATE_SPEED_1 - self.speed * speed_increase
     }
 
     fn process_input(&mut self, timestamp :u32) {
