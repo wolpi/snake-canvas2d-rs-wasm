@@ -9,6 +9,9 @@ use wasm_bindgen::prelude::*;
 const STORAGE_KEY: &str = "highscore";
 const MAX_ENTRIES: usize = 20;
 
+const WEIGHT_FAST: u32 = 10;
+const WEIGHT_LONG: u32 = 3;
+
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord)]
 struct HighscoreEntry {
@@ -32,19 +35,20 @@ fn default_duration() -> u32 {
 
 impl PartialOrd for HighscoreEntry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.game_mode == other.game_mode {
-            if self.mode == other.mode {
-                if self.score == other.score {
-                    if self.duration == other.duration {
-                        return Some(self.time.cmp(&other.time));
-                    }
-                    return Some(self.duration.cmp(&other.duration));
+        if self.mode == other.mode {
+            let this_weight = if self.game_mode.starts_with("Fast") {WEIGHT_FAST} else {WEIGHT_LONG};
+            let other_weight = if other.game_mode.starts_with("Fast") {WEIGHT_FAST} else {WEIGHT_LONG};
+            let this_weighted_score = self.score * this_weight;
+            let other_weighted_score = other.score * other_weight;
+            if this_weighted_score == other_weighted_score {
+                if self.duration == other.duration {
+                    return Some(self.time.cmp(&other.time));
                 }
-                return Some(other.score.cmp(&self.score));
+                return Some(self.duration.cmp(&other.duration));
             }
-            return Some(self.mode.cmp(&other.mode));
+            return Some(other_weighted_score.cmp(&this_weighted_score));
         }
-        return Some(self.game_mode.cmp(&other.game_mode));
+        return Some(self.mode.cmp(&other.mode));
     }
 }
 
@@ -146,6 +150,7 @@ fn print_entry(
     let td_duration = document.create_element("td").unwrap();
     let td_game_mode = document.create_element("td").unwrap();
     let td_mode = document.create_element("td").unwrap();
+    let td_weight = document.create_element("td").unwrap();
     let td_time = document.create_element("td").unwrap();
     tr.append_child(&td_rank)?;
     tr.append_child(&td_name)?;
@@ -153,6 +158,7 @@ fn print_entry(
     tr.append_child(&td_duration)?;
     tr.append_child(&td_game_mode)?;
     tr.append_child(&td_mode)?;
+    tr.append_child(&td_weight)?;
     tr.append_child(&td_time)?;
     td_rank.set_text_content(Some(&rank.to_string()));
     td_name.set_text_content(Some(&entry.name));
@@ -160,6 +166,9 @@ fn print_entry(
     td_score.set_text_content(Some(&entry.score.to_string()));
     td_game_mode.set_text_content(Some(&entry.game_mode));
     td_mode.set_text_content(Some(&entry.mode));
+    let weigth_val_float :f32 = (if entry.game_mode.starts_with("Fast") {WEIGHT_FAST} else {WEIGHT_LONG}) as f32 / 10.;
+    let weight_val_str = if entry.game_mode.starts_with("Fast") {weigth_val_float.to_string()} else {format!("{:.1}", weigth_val_float)};
+    td_weight.set_text_content(Some(&weight_val_str));
     td_time.set_text_content(Some(&entry.time));
     Ok(())
 }
